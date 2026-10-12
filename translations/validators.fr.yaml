@@ -1,4 +1,5 @@
 clocking:
+  conflict: "Un autre pointage vient d'être enregistré pour l'un de ces collaborateurs ce jour-là. Vérifiez la liste des pointages puis renvoyez la saisie."
   date:
     future: "On ne peut pas pointer une date future."
   filter:

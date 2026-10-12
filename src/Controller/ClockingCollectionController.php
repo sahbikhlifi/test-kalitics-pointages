@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Exception\ClockingConflictException;
 use App\Form\ClockingFilterType;
 use App\Form\CreateClockingType;
 use App\Form\Model\ClockingFilter;
@@ -11,6 +12,7 @@ use App\Form\Model\ClockingRequest;
 use App\Repository\ClockingRepository;
 use App\Service\ClockingCreator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -41,13 +43,18 @@ class ClockingCollectionController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $clockings = $clockingCreator->create($form->getData());
+            try {
+                $clockings = $clockingCreator->create($form->getData());
 
-            $this->addFlash('success', $translator->trans('clocking.flash.created', [
-                '%count%' => count($clockings),
-            ]));
+                $this->addFlash('success', $translator->trans('clocking.flash.created', [
+                    '%count%' => count($clockings),
+                ]));
 
-            return $this->redirectToRoute('app_Clocking_list');
+                return $this->redirectToRoute('app_Clocking_list');
+            } catch (ClockingConflictException) {
+                // Pointage concurrent : la saisie est conservée, l'utilisateur peut la renvoyer.
+                $form->addError(new FormError($translator->trans('clocking.conflict', [], 'validators')));
+            }
         }
 
         return $this->render('app/Clocking/create.html.twig', [

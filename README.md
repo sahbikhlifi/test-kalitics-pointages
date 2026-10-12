@@ -71,6 +71,8 @@ Si un collaborateur a **déjà un pointage ce jour-là**, les nouvelles lignes y
 * le chantier doit être ouvert à la date pointée (entre date d'ouverture et de clôture) ;
 * un collaborateur ne peut pas être pointé deux fois sur le même chantier le même jour.
 
+**Accès concurrents.** Entre la validation et l'écriture, une autre requête peut pointer le même collaborateur le même jour. Les contraintes uniques en base garantissent la cohérence. `ClockingCreator` traduit la violation en `ClockingConflictException` (exception métier, le contrôleur ne dépend pas de Doctrine). Toute la saisie est annulée, y compris pour les autres collaborateurs, et le formulaire est réaffiché avec un message clair au lieu d'une erreur 500.
+
 Les règles transverses sont dans `App\Validator\ClockingRequestConstraint(Validator)`, les messages dans `translations/validators.fr.yaml`.
 
 ### Migration des données existantes

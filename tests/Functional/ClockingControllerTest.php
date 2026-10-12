@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\Clocking;
 use App\Entity\ClockingEntry;
+use App\Repository\ClockingRepository;
 use App\Tests\DatabaseTestCase;
 
 class ClockingControllerTest extends DatabaseTestCase
@@ -100,6 +101,41 @@ class ClockingControllerTest extends DatabaseTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('body', 'Sélectionnez au moins un collaborateur.');
         self::assertSelectorTextContains('body', 'Ajoutez au moins un chantier.');
+    }
+
+    /**
+     * Fenêtre de concurrence de bout en bout : le repository ne « voit » pas le pointage
+     * enregistré entre-temps, la validation passe, la base refuse l'écriture (contrainte unique),
+     * la transaction est annulée et le formulaire est réaffiché avec la saisie.
+     */
+    public function testConcurrentClockingShowsErrorAndKeepsInput(): void
+    {
+        $jean = $this->createUser('Jean', 'Dupont');
+        $project = $this->createProject('A');
+        // Pointage « concurrent » écrit directement en base, avant toute requête HTTP.
+        $existing = new Clocking();
+        $existing->setClockingUser($jean);
+        $existing->setDate(new \DateTime('2025-03-10'));
+        $existing->addEntry((new ClockingEntry())->setProject($project)->setDuration(3));
+        $this->entityManager->persist($existing);
+        $this->entityManager->flush();
+
+        $staleRepository = $this->createMock(ClockingRepository::class);
+        $staleRepository->method('findByUsersAndDateIndexedByUser')->willReturn([]);
+        $this->client->disableReboot();
+        static::getContainer()->set(ClockingRepository::class, $staleRepository);
+
+        $other = $this->createProject('B');
+        $this->submit([$jean->getId()], [[$other->getId(), 2]]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('.form-errors', 'Un autre pointage vient d\'être enregistré');
+        // La saisie est conservée pour pouvoir la renvoyer.
+        self::assertSelectorExists(sprintf('input[name="create_clocking[users][]"][value="%d"][checked]', $jean->getId()));
+        self::assertSelectorExists('input[name="create_clocking[entries][0][duration]"][value="2"]');
+
+        $connection = static::getContainer()->get('doctrine')->getConnection();
+        self::assertSame(1, (int) $connection->fetchOne('SELECT COUNT(*) FROM clocking_entry'));
     }
 
     public function testDeleteRequiresPostWithValidCsrfToken(): void
