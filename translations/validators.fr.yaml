@@ -1,0 +1,15 @@
+clocking:
+  date:
+    future: "On ne peut pas pointer une date future."
+  filter:
+    period: "La date de fin doit être postérieure à la date de début."
+  entries:
+    min: "Ajoutez au moins un chantier."
+  project:
+    already_clocked: "{{ user }} est déjà pointé(e) sur « {{ project }} » ce jour-là."
+    closed: "Le chantier « {{ project }} » n'est pas ouvert à cette date."
+    duplicate: "Le chantier « {{ project }} » est saisi plusieurs fois."
+  user_date:
+    unique: "Ce collaborateur a déjà un pointage ce jour-là."
+  users:
+    min: "Sélectionnez au moins un collaborateur."

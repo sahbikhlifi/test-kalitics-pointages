@@ -1,0 +1,34 @@
+services:
+  php:
+    build: docker/php
+    working_dir: /app
+    command: php -S 0.0.0.0:8000 -t public
+    environment:
+      DATABASE_URL: 'mysql://app:app@database:3306/test-fullstack?serverVersion=10.11.2-MariaDB&charset=utf8mb4'
+    volumes:
+      - ./:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: mariadb:10.11
+    environment:
+      MARIADB_DATABASE: test-fullstack
+      MARIADB_USER: app
+      MARIADB_PASSWORD: app
+      MARIADB_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - database_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+
+volumes:
+  database_data:

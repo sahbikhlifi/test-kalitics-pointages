@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Chantiers{% endblock %}
+
+{% block body %}
+    {% set today = 'today'|date('Y-m-d') %}
+    <div class="page-head">
+        <div>
+            <h1>Chantiers</h1>
+            <p>On ne peut pointer un chantier qu'entre sa date d'ouverture et sa date de clôture.</p>
+        </div>
+    </div>
+
+    <div class="panel table-card">
+    <div class="table-tools">
+        <input type="search" placeholder="Rechercher un chantier ou une adresse" data-filter="#projects-table" aria-label="Rechercher un chantier">
+    </div>
+    <div class="table-wrap">
+    <table class="data-table" id="projects-table">
+        <thead>
+            <tr>
+                <th>{{ 'entity.Project.name'|trans }}</th>
+                <th>{{ 'entity.Project.address'|trans }}</th>
+                <th>{{ 'entity.Project.dateStart'|trans }}</th>
+                <th>{{ 'entity.Project.dateEnd'|trans }}</th>
+                <th>État</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects|sort((a, b) => a.name <=> b.name) %}
+                {% set open = project.isOpenOn(date()) %}
+                <tr data-filterable>
+                    <td data-label="{{ 'entity.Project.name'|trans }}"><strong>{{ project.name }}</strong></td>
+                    <td data-label="{{ 'entity.Project.address'|trans }}">{{ project.address }}</td>
+                    <td data-label="{{ 'entity.Project.dateStart'|trans }}" class="num">{{ project.dateStart|date('d/m/Y') }}</td>
+                    <td data-label="{{ 'entity.Project.dateEnd'|trans }}" class="num">{{ project.dateEnd ? project.dateEnd|date('d/m/Y') : '—' }}</td>
+                    <td data-label="État">
+                        {% if open %}
+                            <span class="status status--open">Ouvert</span>
+                        {% elseif project.dateStart|date('Y-m-d') > today %}
+                            <span class="status status--closed">À venir</span>
+                        {% else %}
+                            <span class="status status--closed">Clôturé</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr class="empty"><td colspan="5">Aucun chantier.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    </div>
+    <script src="{{ asset('js/table-filter.js') }}" defer></script>
+{% endblock %}

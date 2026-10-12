@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Integration\Service;
+
+use App\Entity\Clocking;
+use App\Entity\ClockingEntry;
+use App\Form\Model\ClockingEntryInput;
+use App\Form\Model\ClockingRequest;
+use App\Service\ClockingCreator;
+use App\Tests\DatabaseTestCase;
+use DateTime;
+
+class ClockingCreatorTest extends DatabaseTestCase
+{
+    public function testOneUserManyProjectsCreatesOneClockingWithManyEntries(): void
+    {
+        $user = $this->createUser('Jean', 'Dupont');
+        $projectA = $this->createProject('A');
+        $projectB = $this->createProject('B');
+
+        $clockings = $this->creator()->create($this->request([$user], [[$projectA, 3], [$projectB, 5]]));
+
+        self::assertCount(1, $clockings);
+        $this->entityManager->clear();
+        self::assertSame(1, $this->countRows(Clocking::class));
+        self::assertSame(2, $this->countRows(ClockingEntry::class));
+
+        $clocking = $this->entityManager->getRepository(Clocking::class)->findOneBy([]);
+        self::assertSame(8, $clocking->getTotalDuration());
+    }
+
+    public function testManyUsersCreatesOneClockingPerUserWithSameEntries(): void
+    {
+        $users = [$this->createUser('Jean', 'Dupont'), $this->createUser('Marie', 'Curie'), $this->createUser('Paul', 'Martin')];
+        $project = $this->createProject('A');
+
+        $clockings = $this->creator()->create($this->request($users, [[$project, 7]]));
+
+        self::assertCount(3, $clockings);
+        $this->entityManager->clear();
+        self::assertSame(3, $this->countRows(Clocking::class));
+        self::assertSame(3, $this->countRows(ClockingEntry::class));
+    }
+
+    public function testExistingClockingSameDayIsCompletedInsteadOfDuplicated(): void
+    {
+        $user = $this->createUser('Jean', 'Dupont');
+        $projectA = $this->createProject('A');
+        $projectB = $this->createProject('B');
+
+        $this->creator()->create($this->request([$user], [[$projectA, 3]]));
+        $this->creator()->create($this->request([$user], [[$projectB, 4]]));
+
+        $this->entityManager->clear();
+        self::assertSame(1, $this->countRows(Clocking::class));
+        self::assertSame(2, $this->countRows(ClockingEntry::class));
+    }
+
+    private function countRows(string $class): int
+    {
+        return $this->entityManager->getRepository($class)->count([]);
+    }
+
+    private function creator(): ClockingCreator
+    {
+        return static::getContainer()->get(ClockingCreator::class);
+    }
+
+    /**
+     * @param \App\Entity\User[]                      $users
+     * @param array<array{\App\Entity\Project, int}> $entries
+     */
+    private function request(array $users, array $entries): ClockingRequest
+    {
+        $request = new ClockingRequest();
+        $request->users = $users;
+        $request->date = new DateTime('2025-03-10');
+        foreach ($entries as [$project, $duration]) {
+            $input = new ClockingEntryInput();
+            $input->project = $project;
+            $input->duration = $duration;
+            $request->entries[] = $input;
+        }
+
+        return $request;
+    }
+}

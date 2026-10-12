@@ -1,0 +1,51 @@
+entity:
+  Clocking:
+    clockingUser: "Collaborateur"
+    date: "Date"
+    entries: "Chantiers"
+    totalDuration: "Durée totale"
+  ClockingEntry:
+    duration: "Durée (h)"
+    project: "Chantier"
+  Project:
+    address: "Adresse"
+    dateEnd: "Date de clôture"
+    dateStart: "Date d'ouverture"
+    name: "Nom"
+  User:
+    firstName: "Prénom"
+    lastName: "Nom"
+    matricule: "Matricule"
+clocking:
+  delete:
+    cancel: "Annuler"
+    submit: "Supprimer le pointage"
+    title: "Supprimer ce pointage ?"
+    warning: "Le pointage et toutes ses lignes seront supprimés définitivement."
+  filter:
+    all_projects: "Tous les chantiers"
+    all_users: "Tous les collaborateurs"
+    from: "Du"
+    no_result: "Aucun pointage ne correspond à ces filtres."
+    reset: "Effacer les filtres"
+    submit: "Filtrer"
+    to: "Au"
+  flash:
+    created: "{1}1 pointage enregistré.|]1,Inf[%count% pointages enregistrés."
+  form:
+    add_entry: "Ajouter un chantier"
+    entries_help: "Une ligne par chantier, avec les heures passées dessus (1 à 10 h)."
+    intro: "Saisissez la journée une seule fois : elle sera enregistrée pour chaque collaborateur coché."
+    project_placeholder: "Choisir un chantier"
+    remove_entry: "Retirer"
+    step_when: "Quel jour ?"
+    step_where: "Sur quels chantiers ?"
+    step_who: "Qui pointer ?"
+    submit: "Enregistrer le pointage"
+    summary: "Récapitulatif"
+    title: "Nouveau pointage"
+    users_clear: "Tout décocher"
+    users_help: "Cochez-vous, ou cochez toute l'équipe : chacun reçoit le même pointage."
+    users_search: "Rechercher un collaborateur"
+  list:
+    empty: "Aucun pointage pour l'instant."

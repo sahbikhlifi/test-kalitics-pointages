@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% import 'app/_macros.html.twig' as ui %}
+
+{% block title %}Collaborateurs{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>Collaborateurs</h1>
+            <p>{{ users|length }} personnes peuvent être pointées.</p>
+        </div>
+    </div>
+
+    <div class="panel table-card">
+    <div class="table-tools">
+        <input type="search" placeholder="Rechercher un nom ou un matricule" data-filter="#users-table" aria-label="Rechercher un collaborateur">
+    </div>
+    <div class="table-wrap">
+    <table class="data-table" id="users-table">
+        <thead>
+            <tr>
+                <th>{{ 'entity.User.lastName'|trans }}</th>
+                <th>{{ 'entity.User.firstName'|trans }}</th>
+                <th>{{ 'entity.User.matricule'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users|sort((a, b) => a.lastName <=> b.lastName) %}
+                <tr data-filterable>
+                    <td data-label="{{ 'entity.User.lastName'|trans }}"><span class="person-cell">{{ ui.avatar(user) }}{{ user.lastName }}</span></td>
+                    <td data-label="{{ 'entity.User.firstName'|trans }}">{{ user.firstName }}</td>
+                    <td data-label="{{ 'entity.User.matricule'|trans }}">{{ user.matricule }}</td>
+                </tr>
+            {% else %}
+                <tr class="empty"><td colspan="3">Aucun collaborateur.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    </div>
+    <script src="{{ asset('js/table-filter.js') }}" defer></script>
+{% endblock %}

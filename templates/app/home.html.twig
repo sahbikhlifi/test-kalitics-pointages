@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}À propos{% endblock %}
+
+{% block body %}
+    <div class="home-actions">
+        <a class="btn btn--primary" href="{{ path('app_Clocking_create') }}">Nouveau pointage</a>
+        <a class="btn btn--ghost" href="{{ path('app_Clocking_list') }}">Voir les pointages</a>
+    </div>
+    <article class="panel prose">
+        {{ readmeContent|markdown_to_html }}
+    </article>
+{% endblock %}

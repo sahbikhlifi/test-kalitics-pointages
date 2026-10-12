@@ -1,0 +1,103 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'form/theme.html.twig' %}
+
+{% block title %}{{ 'clocking.form.title'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="page-head">
+        <div>
+            <h1>{{ 'clocking.form.title'|trans }}</h1>
+            <p>{{ 'clocking.form.intro'|trans }}</p>
+        </div>
+    </div>
+
+    {{ form_start(form, {attr: {novalidate: 'novalidate', id: 'clocking-form'}}) }}
+    {% if form.vars.errors|length > 0 %}
+        <div class="form-errors">{{ form_errors(form) }}</div>
+    {% endif %}
+
+    <div class="clocking-layout">
+        <div class="steps">
+            <section class="panel step" aria-labelledby="step-who">
+                <div class="step__head">
+                    <span class="step__no" aria-hidden="true">1</span>
+                    <h2 id="step-who">{{ 'clocking.form.step_who'|trans }}</h2>
+                </div>
+                <p class="step__help">{{ 'clocking.form.users_help'|trans }}</p>
+                <div class="step__body">
+                    {{ form_errors(form.users) }}
+                    <div class="people-tools">
+                        <input type="search" id="people-search" placeholder="{{ 'clocking.form.users_search'|trans }}" aria-label="{{ 'clocking.form.users_search'|trans }}">
+                        <span class="count" id="people-count" aria-live="polite"></span>
+                        <button type="button" class="btn btn--quiet" id="people-clear">{{ 'clocking.form.users_clear'|trans }}</button>
+                    </div>
+                    <div class="people" role="group" aria-labelledby="step-who">
+                        {% for user in form.users %}
+                            <div class="person" data-person>
+                                {{ form_widget(user) }}
+                                {{ form_label(user) }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% do form.users.setRendered() %}
+                </div>
+            </section>
+
+            <section class="panel step" aria-labelledby="step-when">
+                <div class="step__head">
+                    <span class="step__no" aria-hidden="true">2</span>
+                    <h2 id="step-when">{{ 'clocking.form.step_when'|trans }}</h2>
+                </div>
+                <div class="step__body">
+                    <div class="field date-field {{ form.date.vars.valid ? '' : 'field--invalid' }}">
+                        {{ form_label(form.date) }}
+                        {{ form_widget(form.date, {attr: {max: 'today'|date('Y-m-d')}}) }}
+                        {{ form_errors(form.date) }}
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel step" aria-labelledby="step-where">
+                <div class="step__head">
+                    <span class="step__no" aria-hidden="true">3</span>
+                    <h2 id="step-where">{{ 'clocking.form.step_where'|trans }}</h2>
+                </div>
+                <p class="step__help">{{ 'clocking.form.entries_help'|trans }}</p>
+                <div class="step__body">
+                    {{ form_errors(form.entries) }}
+                    <div
+                            id="clocking-entries"
+                            data-prototype="{{ include('app/Clocking/_entry_row.html.twig', {entry: form.entries.vars.prototype})|e('html_attr') }}"
+                            data-index="{{ form.entries|length > 0 ? form.entries|last.vars.name + 1 : 0 }}"
+                    >
+                        {% for entry in form.entries %}
+                            {{ include('app/Clocking/_entry_row.html.twig', {entry: entry}) }}
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn--ghost add-entry" id="add-clocking-entry">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        {{ 'clocking.form.add_entry'|trans }}
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <aside class="panel summary" aria-labelledby="summary-title">
+            <h2 id="summary-title">{{ 'clocking.form.summary'|trans }}</h2>
+            <dl>
+                <dt>Collaborateurs</dt><dd class="num" id="sum-people">0</dd>
+                <dt>Chantiers</dt><dd class="num" id="sum-projects">0</dd>
+                <dt>Date</dt><dd class="num" id="sum-date">—</dd>
+            </dl>
+            <div class="summary__big"><strong id="sum-hours">0</strong><span>h par collaborateur</span></div>
+            <div class="tape" id="sum-tape" style="--scale: 10" aria-hidden="true"><div class="tape__fill"></div></div>
+            <div class="summary__ticks" aria-hidden="true"><span>0</span><span id="sum-scale">10 h</span></div>
+            {{ form_widget(form.submit, {attr: {class: 'btn btn--primary'}}) }}
+            <p class="summary__note" id="sum-note" aria-live="polite"></p>
+        </aside>
+    </div>
+    {{ form_end(form) }}
+
+    <script src="{{ asset('js/clocking-form.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme filterForm 'form/theme.html.twig' %}
+
+{% import 'app/_macros.html.twig' as ui %}
+
+{% block title %}Pointages{% endblock %}
+
+{% block body %}
+    {% set query = app.request.query.all %}
+    <div class="page-head">
+        <div>
+            <h1>Pointages</h1>
+            <p>Un pointage par collaborateur et par jour, avec le détail des heures par chantier.</p>
+        </div>
+        <a class="btn btn--primary" href="{{ path('app_Clocking_create') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Nouveau pointage
+        </a>
+    </div>
+
+    {% set average = listPage.totalClockings > 0 ? (listPage.totalHours / listPage.totalClockings) : 0 %}
+    <section class="kpis" aria-label="Indicateurs">
+        <div class="panel kpi">
+            <p class="kpi__label">Pointages</p>
+            <p class="kpi__value">{{ listPage.totalClockings }}</p>
+            <p class="kpi__hint">{{ filter.isEmpty ? 'Tous les pointages' : 'Selon les filtres' }}</p>
+        </div>
+        <div class="panel kpi kpi--accent">
+            <p class="kpi__label">Heures pointées</p>
+            <p class="kpi__value">{{ listPage.totalHours }}<small>h</small></p>
+            <p class="kpi__hint">{{ filter.project ? 'Sur ' ~ filter.project.name : 'Tous chantiers confondus' }}</p>
+        </div>
+        <div class="panel kpi">
+            <p class="kpi__label">Moyenne par pointage</p>
+            <p class="kpi__value">{{ average|number_format(1, ',', ' ') }}<small>h</small></p>
+            <p class="kpi__hint">Par collaborateur et par jour</p>
+        </div>
+    </section>
+
+    <div class="panel table-card">
+    {{ form_start(filterForm, {attr: {class: 'filters', role: 'search', 'aria-label': 'Filtrer les pointages'}}) }}
+        <div class="field">{{ form_label(filterForm.user) }}{{ form_widget(filterForm.user) }}</div>
+        <div class="field">{{ form_label(filterForm.project) }}{{ form_widget(filterForm.project) }}</div>
+        <div class="field">{{ form_label(filterForm.from) }}{{ form_widget(filterForm.from) }}</div>
+        <div class="field {{ filterForm.to.vars.valid ? '' : 'field--invalid' }}">
+            {{ form_label(filterForm.to) }}{{ form_widget(filterForm.to) }}
+        </div>
+        <div class="filters__actions">
+            <button type="submit" class="btn btn--primary">{{ 'clocking.filter.submit'|trans }}</button>
+            {% if not filter.isEmpty %}
+                <a class="btn btn--quiet" href="{{ path('app_Clocking_list') }}">{{ 'clocking.filter.reset'|trans }}</a>
+            {% endif %}
+        </div>
+        {% if not filterForm.to.vars.valid %}
+            <div class="filters__errors">{{ form_errors(filterForm.to) }}</div>
+        {% endif %}
+    {{ form_end(filterForm) }}
+
+
+    <div class="table-wrap">
+        <table class="data-table" id="clockings-table">
+            <thead>
+                <tr>
+                    <th>{{ 'entity.Clocking.date'|trans }}</th>
+                    <th>{{ 'entity.Clocking.clockingUser'|trans }}</th>
+                    <th>{{ 'entity.Clocking.entries'|trans }}</th>
+                    <th class="align-right">{{ 'entity.Clocking.totalDuration'|trans }}</th>
+                    <th><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for clocking in listPage.clockings %}
+                    <tr>
+                        <td data-label="{{ 'entity.Clocking.date'|trans }}" class="num nowrap cell-date">{{ clocking.date|date('d/m/Y') }}</td>
+                        <td data-label="{{ 'entity.Clocking.clockingUser'|trans }}" class="cell-user"><span class="person-cell">{{ ui.avatar(clocking.clockingUser) }}{{ clocking.clockingUser.fullName }}</span></td>
+                        <td data-label="{{ 'entity.Clocking.entries'|trans }}" class="cell-entries">
+                            <ul class="entries">
+                                {% for entry in clocking.entries %}
+                                    <li class="{{ filter.project and filter.project.id == entry.project.id ? 'is-match' }}">
+                                        <span>{{ entry.project.name }}</span><span class="h">{{ entry.duration }} h</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td data-label="{{ 'entity.Clocking.totalDuration'|trans }}" class="align-right cell-total"><span class="total-h">{{ clocking.totalDuration }} h</span></td>
+                        <td class="align-right">
+                            <form
+                                    method="post"
+                                    action="{{ path('app_Clocking_delete', {id: clocking.id}) }}"
+                                    data-confirm-delete
+                                    data-user="{{ clocking.clockingUser.fullName }}"
+                                    data-date="{{ clocking.date|date('d/m/Y') }}"
+                                    data-entries="{{ clocking.entries|map(e => e.project.name ~ ' : ' ~ e.duration ~ ' h')|join('|') }}"
+                                    data-total="{{ clocking.totalDuration }} h"
+                            >
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_clocking_' ~ clocking.id) }}">
+                                <input type="hidden" name="_list_query" value="{{ app.request.queryString }}">
+                                <button type="submit" class="btn btn--danger" aria-label="Supprimer le pointage de {{ clocking.clockingUser.fullName }} du {{ clocking.date|date('d/m/Y') }}">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr class="empty">
+                        <td colspan="5">
+                            {% if filter.isEmpty %}
+                                {{ 'clocking.list.empty'|trans }}
+                                <a href="{{ path('app_Clocking_create') }}">Saisir le premier pointage</a>
+                            {% else %}
+                                {{ 'clocking.filter.no_result'|trans }}
+                                <a href="{{ path('app_Clocking_list') }}">{{ 'clocking.filter.reset'|trans }}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% set pageCount = listPage.pageCount %}
+    <div class="table-foot">
+        <span class="results-summary">
+            {% if listPage.totalClockings > 0 %}
+                {{ (listPage.page - 1) * listPage.perPage + 1 }}–{{ min(listPage.page * listPage.perPage, listPage.totalClockings) }} sur {{ listPage.totalClockings }} pointage{{ listPage.totalClockings > 1 ? 's' }} · {{ listPage.totalHours }} h{% if filter.project %} sur {{ filter.project.name }}{% endif %}
+            {% else %}
+                0 pointage
+            {% endif %}
+        </span>
+    {% if pageCount > 1 %}
+        {% set current = listPage.page %}
+        <nav class="pagination" aria-label="Pagination">
+            {% if current > 1 %}
+                <a class="pagination__step" href="{{ path('app_Clocking_list', query|merge({page: current - 1})) }}" rel="prev">Précédent</a>
+            {% else %}
+                <span class="pagination__step is-disabled" aria-disabled="true">Précédent</span>
+            {% endif %}
+
+            <ol>
+                {% set shown = [] %}
+                {% for n in 1..pageCount %}
+                    {% if n == 1 or n == pageCount or (n >= current - 2 and n <= current + 2) %}
+                        {% if shown is not empty and n - shown|last > 1 %}
+                            <li class="pagination__gap" aria-hidden="true">…</li>
+                        {% endif %}
+                        <li>
+                            {% if n == current %}
+                                <span aria-current="page">{{ n }}</span>
+                            {% else %}
+                                <a href="{{ path('app_Clocking_list', query|merge({page: n})) }}" aria-label="Page {{ n }}">{{ n }}</a>
+                            {% endif %}
+                        </li>
+                        {% set shown = shown|merge([n]) %}
+                    {% endif %}
+                {% endfor %}
+            </ol>
+
+            {% if current < pageCount %}
+                <a class="pagination__step" href="{{ path('app_Clocking_list', query|merge({page: current + 1})) }}" rel="next">Suivant</a>
+            {% else %}
+                <span class="pagination__step is-disabled" aria-disabled="true">Suivant</span>
+            {% endif %}
+        </nav>
+    {% endif %}
+    </div>
+    </div>
+
+    {# Confirmation de suppression : remplace confirm() ; sans JS, le formulaire supprime directement. #}
+    <dialog class="modal" id="delete-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-desc">
+        <form method="dialog" class="modal__body">
+            <div class="modal__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>
+            </div>
+            <h2 id="delete-dialog-title">{{ 'clocking.delete.title'|trans }}</h2>
+            <p id="delete-dialog-desc" class="modal__text">
+                <strong data-slot="user"></strong> · <span data-slot="date"></span>
+            </p>
+            <ul class="modal__entries" data-slot="entries"></ul>
+            <p class="modal__total">{{ 'entity.Clocking.totalDuration'|trans }} <strong data-slot="total"></strong></p>
+            <p class="modal__warning">{{ 'clocking.delete.warning'|trans }}</p>
+            <div class="modal__actions">
+                <button type="submit" value="cancel" class="btn btn--ghost" autofocus>{{ 'clocking.delete.cancel'|trans }}</button>
+                <button type="submit" value="confirm" class="btn btn--danger-solid">{{ 'clocking.delete.submit'|trans }}</button>
+            </div>
+        </form>
+    </dialog>
+    <script src="{{ asset('js/delete-dialog.js') }}" defer></script>
+{% endblock %}

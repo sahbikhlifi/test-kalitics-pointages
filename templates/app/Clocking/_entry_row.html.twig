@@ -1,0 +1,13 @@
+<div class="entry-row" data-entry>
+    <div class="field {{ entry.project.vars.valid ? '' : 'field--invalid' }}">
+        {{ form_label(entry.project) }}
+        {{ form_widget(entry.project, {attr: {'data-entry-project': ''}}) }}
+        {{ form_errors(entry.project) }}
+    </div>
+    <div class="field {{ entry.duration.vars.valid ? '' : 'field--invalid' }}">
+        {{ form_label(entry.duration) }}
+        {{ form_widget(entry.duration, {attr: {'data-entry-duration': '', inputmode: 'numeric'}}) }}
+        {{ form_errors(entry.duration) }}
+    </div>
+    <button type="button" class="btn btn--quiet entry-remove" data-remove-entry>{{ 'clocking.form.remove_entry'|trans }}</button>
+</div>

@@ -1,0 +1,4 @@
+{# Pastille avec les initiales (Nom Prénom). #}
+{% macro avatar(user) %}
+    <span class="avatar" aria-hidden="true">{{ user.lastName|first|upper }}{{ user.firstName|first|upper }}</span>
+{% endmacro %}

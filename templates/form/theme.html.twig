@@ -1,0 +1,12 @@
+{% use 'form_div_layout.html.twig' %}
+
+{# Erreurs sous le champ, en phrase claire plutôt qu'en liste à puces. #}
+{%- block form_errors -%}
+    {%- if errors|length > 0 -%}
+        <ul class="field-errors">
+            {%- for error in errors -%}
+                <li class="field-error">{{ error.message }}</li>
+            {%- endfor -%}
+        </ul>
+    {%- endif -%}
+{%- endblock form_errors -%}
